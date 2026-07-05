@@ -13,6 +13,7 @@ const signupValidation = async (req, res, next) => {
         .messages({
           "any.only": "Passwords do not match",
         }),
+      role: Joi.string().valid("author", "reader").default("reader"),
     });
 
     const { error, value } = userSchema.validate(req.body);

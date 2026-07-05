@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 // For User Signup
 const userSignup = async (req, res) => {
   try {
-    const { name, email, password, password_confirmation } = req.body;
+    const { name, email, password, password_confirmation, role } = req.body;
 
     const user = await User.findOne({ email });
 
@@ -20,6 +20,7 @@ const userSignup = async (req, res) => {
       name,
       email,
       password,
+      role,
     });
 
     // Create Hashed password
@@ -31,7 +32,7 @@ const userSignup = async (req, res) => {
       {
         id: newUser._id,
         email: newUser.email,
-        status: newUser.status,
+        role: newUser.role,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRERS_IN },
@@ -43,6 +44,12 @@ const userSignup = async (req, res) => {
       token,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).send({
+        status: false,
+        message: "User already exists",
+      });
+    }
     console.log("Something went wrong ", error);
     res.status(500).send({
       status: false,
@@ -72,11 +79,19 @@ const userLogin = async (req, res) => {
       });
     }
 
+    if (!user.status) {
+      return res.status(403).send({
+        status: false,
+        message: "Account is disabled",
+      });
+    }
+
     // Create JWT Token
     const token = jwt.sign(
       {
         id: user._id,
         email: user.email,
+        role: user.role,
         status: user.status,
       },
       process.env.JWT_SECRET,
