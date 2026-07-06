@@ -1,4 +1,5 @@
 import Category from "../Models/Category.js";
+import slugify from "slugify";
 
 // For get all category
 const getAllCategory = async (req, res) => {
@@ -43,9 +44,16 @@ const getCategoryById = async (req, res) => {
 const createCategory = async (req, res) => {
   try {
     const { name, slug, description } = req.body;
+
+    const generateSlug = slugify(name, {
+      lower: true,
+      strict: true,
+      trim: true,
+    });
+
     const newCategory = await Category.create({
       name,
-      slug,
+      slug: generateSlug,
       description,
     });
 

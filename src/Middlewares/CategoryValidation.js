@@ -5,7 +5,6 @@ const storeCategoryRequest = async (req, res, next) => {
   try {
     const categorySchema = Joi.object({
       name: Joi.string().required().min(3).max(100),
-      slug: Joi.string().required().min(3).max(100),
       description: Joi.string().required().min(20).max(300),
     });
 
