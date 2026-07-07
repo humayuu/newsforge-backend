@@ -3,6 +3,7 @@ import {
   storeCategoryRequest,
   updateCategoryRequest,
 } from "../Middlewares/CategoryValidation.js";
+import verifyToken from "../Middlewares/AuthToken.js";
 import {
   getAllCategory,
   getCategoryById,
@@ -13,8 +14,12 @@ import {
 
 const categoryRouter = express.Router();
 
+// Public routes
 categoryRouter.get("/category", getAllCategory);
 categoryRouter.get("/category/:id", getCategoryById);
+
+// Protected routes (require a valid token)
+categoryRouter.use(verifyToken);
 categoryRouter.post("/category", storeCategoryRequest, createCategory);
 categoryRouter.put("/category/:id", updateCategoryRequest, updateCategory);
 categoryRouter.delete("/category/:id", deleteCategory);

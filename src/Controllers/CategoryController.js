@@ -1,6 +1,36 @@
 import Category from "../Models/Category.js";
 import slugify from "slugify";
 
+// Shared error handler for category controllers
+const handleError = (res, error) => {
+  if (error.code === 11000) {
+    return res.status(409).send({
+      status: false,
+      message: "Category already exists",
+    });
+  }
+
+  if (error.name === "CastError") {
+    return res.status(404).send({
+      status: false,
+      message: "Invalid Category id",
+    });
+  }
+
+  if (error.name === "ValidationError") {
+    return res.status(400).send({
+      status: false,
+      message: error.message,
+    });
+  }
+
+  console.error("Something went wrong ", error);
+  return res.status(500).send({
+    status: false,
+    message: "Internal Server Error",
+  });
+};
+
 // For get all category
 const getAllCategory = async (req, res) => {
   try {
@@ -8,11 +38,7 @@ const getAllCategory = async (req, res) => {
 
     return res.status(200).send({ status: true, data: categories });
   } catch (error) {
-    console.log("Something went wrong ", error);
-    res.status(500).send({
-      status: false,
-      message: "Internal Server Error",
-    });
+    return handleError(res, error);
   }
 };
 
@@ -32,19 +58,16 @@ const getCategoryById = async (req, res) => {
 
     return res.status(200).send({ status: true, data: category });
   } catch (error) {
-    console.log("Something went wrong ", error);
-    res.status(500).send({
-      status: false,
-      message: "Internal Server Error",
-    });
+    return handleError(res, error);
   }
 };
 
 // For Create Category
 const createCategory = async (req, res) => {
   try {
-    const { name, slug, description } = req.body;
+    const { name, description } = req.body;
 
+    // Generate Slug
     const generateSlug = slugify(name, {
       lower: true,
       strict: true,
@@ -63,17 +86,7 @@ const createCategory = async (req, res) => {
       data: newCategory,
     });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).send({
-        status: false,
-        message: "Category already exists",
-      });
-    }
-    console.log("Something went wrong ", error);
-    res.status(500).send({
-      status: false,
-      message: "Internal Server Error",
-    });
+    return handleError(res, error);
   }
 };
 
@@ -81,13 +94,27 @@ const createCategory = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, slug, description } = req.body;
+    const { name, description } = req.body;
 
-    const category = await Category.findByIdAndUpdate(
-      id,
-      { name, slug, description },
-      { new: true, runValidators: true },
-    );
+    const update = {};
+
+    if (name !== undefined) {
+      update.name = name;
+      update.slug = slugify(name, {
+        lower: true,
+        strict: true,
+        trim: true,
+      });
+    }
+
+    if (description !== undefined) {
+      update.description = description;
+    }
+
+    const category = await Category.findByIdAndUpdate(id, update, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!category) {
       return res.status(404).send({
@@ -102,17 +129,7 @@ const updateCategory = async (req, res) => {
       data: category,
     });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).send({
-        status: false,
-        message: "Category already exists",
-      });
-    }
-    console.log("Something went wrong ", error);
-    res.status(500).send({
-      status: false,
-      message: "Internal Server Error",
-    });
+    return handleError(res, error);
   }
 };
 
@@ -134,11 +151,7 @@ const deleteCategory = async (req, res) => {
       .status(200)
       .send({ status: true, message: "Category deleted Successfully" });
   } catch (error) {
-    console.log("Something went wrong ", error);
-    res.status(500).send({
-      status: false,
-      message: "Internal Server Error",
-    });
+    return handleError(res, error);
   }
 };
 

@@ -1,48 +1,40 @@
 import jwt from "jsonwebtoken";
 
-// Verifies the JWT from the Authorization header and attaches the payload to req.user
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization || "";
-  const [scheme, token] = authHeader.split(" ");
-
-  if (scheme !== "Bearer" || !token) {
-    return res.status(401).send({
-      status: false,
-      message: "Authorization token missing",
-    });
-  }
-
+const verifyToken = async (req, res, next) => {
   try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).send({
+        status: false,
+        message: "Token is required",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decoded.status) {
-      return res.status(403).send({
+    req.user = decoded;
+
+    next();
+  } catch (error) {
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
+    ) {
+      return res.status(401).send({
         status: false,
-        message: "Account is disabled",
+        message: "Invalid or expired token",
       });
     }
 
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).send({
+    console.error("Something went wrong ", error);
+    return res.status(500).send({
       status: false,
-      message: "Invalid or expired token",
+      message: "Internal Server Error",
     });
   }
 };
 
-// Restricts a route to the given roles, e.g. authorizeRoles("admin", "author")
-const authorizeRoles = (...roles) => {
-  return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).send({
-        status: false,
-        message: "You do not have permission to perform this action",
-      });
-    }
-    next();
-  };
-};
-
-export { verifyToken, authorizeRoles };
+export default verifyToken;
