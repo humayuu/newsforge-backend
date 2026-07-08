@@ -8,6 +8,10 @@ import authRouter from "./src/Routes/AuthRoutes.js";
 import categoryRouter from "./src/Routes/CategoryRoutes.js";
 import postRouter from "./src/Routes/PostRoutes.js";
 import userRouter from "./src/Routes/UserRoutes.js";
+import * as dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 const app = express();
 const port = process.env.PORT || 8080;

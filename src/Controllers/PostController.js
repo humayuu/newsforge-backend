@@ -34,7 +34,24 @@ const handleError = (res, error) => {
 // For get all Post
 const getAllPost = async (req, res) => {
   try {
-    const posts = await Post.find();
+    const posts = await Post.find({ isPublished: true });
+
+    return res.status(200).send({ status: true, data: posts });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+// For get all posts - admin/author dashboard
+const getAllPostForDashboard = async (req, res) => {
+  try {
+    let filter = {};
+
+    if (req.user.role === "author") {
+      filter = { user: req.user.id };
+    }
+
+    const posts = await Post.find(filter);
 
     return res.status(200).send({ status: true, data: posts });
   } catch (error) {
@@ -103,6 +120,27 @@ const updatePost = async (req, res) => {
     const { category, title, content, isPublished, publishedAt, status } =
       req.body;
 
+    // Fetch first so we can check ownership before writing anything
+    const existingPost = await Post.findById(id);
+
+    if (!existingPost) {
+      return res.status(404).send({
+        status: false,
+        message: "Invalid Post id",
+      });
+    }
+
+    // Admin can edit any post. Author can only edit their own.
+    if (
+      req.user.role === "author" &&
+      existingPost.user.toString() !== req.user.id
+    ) {
+      return res.status(403).send({
+        status: false,
+        message: "You can only edit your own posts",
+      });
+    }
+
     const update = {};
 
     if (category !== undefined) {
@@ -139,13 +177,6 @@ const updatePost = async (req, res) => {
       runValidators: true,
     });
 
-    if (!post) {
-      return res.status(404).send({
-        status: false,
-        message: "Invalid Post id",
-      });
-    }
-
     return res.status(200).send({
       status: true,
       message: "Post updated Successfully",
@@ -161,14 +192,28 @@ const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const post = await Post.findByIdAndDelete(id);
+    // Fetch first so we can check ownership before deleting
+    const existingPost = await Post.findById(id);
 
-    if (!post) {
+    if (!existingPost) {
       return res.status(404).send({
         status: false,
         message: "Invalid Post id",
       });
     }
+
+    // Admin can delete any post. Author can only delete their own.
+    if (
+      req.user.role === "author" &&
+      existingPost.user.toString() !== req.user.id
+    ) {
+      return res.status(403).send({
+        status: false,
+        message: "You can only delete your own posts",
+      });
+    }
+
+    await Post.findByIdAndDelete(id);
 
     return res
       .status(200)
@@ -178,4 +223,11 @@ const deletePost = async (req, res) => {
   }
 };
 
-export { getAllPost, getPostById, createPost, updatePost, deletePost };
+export {
+  getAllPost,
+  getPostById,
+  createPost,
+  updatePost,
+  deletePost,
+  getAllPostForDashboard,
+};

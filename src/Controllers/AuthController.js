@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 // For User Signup
 const userSignup = async (req, res) => {
   try {
-    const { name, email, password, password_confirmation, role } = req.body;
+    const { name, email, password, password_confirmation } = req.body;
 
     const user = await User.findOne({ email });
 
@@ -20,7 +20,6 @@ const userSignup = async (req, res) => {
       name,
       email,
       password,
-      role,
     });
 
     // Create Hashed password
