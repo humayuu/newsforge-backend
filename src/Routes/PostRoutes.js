@@ -11,6 +11,7 @@ import {
   updatePost,
   deletePost,
   getAllPostForDashboard,
+  uploadMiddleware,
 } from "../Controllers/PostController.js";
 import validateRoles from "../Middlewares/RolesValidation.js";
 const postRouter = express.Router();
@@ -30,8 +31,8 @@ postRouter.get("/post/:id", getPostById);
 
 // Protected routes (require a valid token)
 postRouter.use(verifyToken, validateRoles("admin", "author"));
-postRouter.post("/post", storePostRequest, createPost);
-postRouter.put("/post/:id", updatePostRequest, updatePost);
+postRouter.post("/post", uploadMiddleware, storePostRequest, createPost);
+postRouter.put("/post/:id", uploadMiddleware, updatePostRequest, updatePost);
 postRouter.delete("/post/:id", deletePost);
 
 export default postRouter;

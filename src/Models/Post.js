@@ -30,6 +30,10 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    post_image: {
+      type: String,
+      required: true,
+    },
     isPublished: {
       type: Boolean,
       default: false,

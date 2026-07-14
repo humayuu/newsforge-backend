@@ -1,5 +1,7 @@
 import Post from "../Models/Post.js";
 import slugify from "slugify";
+import multer from "multer";
+import path from "path";
 
 // Shared error handler for Post controllers
 const handleError = (res, error) => {
@@ -79,6 +81,28 @@ const getPostById = async (req, res) => {
   }
 };
 
+// Multer Config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueFilename =
+      Date.now() +
+      "-" +
+      Math.round(Math.random() * 1e9) +
+      path.extname(file.originalname);
+    cb(null, uniqueFilename);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
+
+const uploadMiddleware = upload.single("post_image");
+
 // For Create Post
 const createPost = async (req, res) => {
   try {
@@ -98,6 +122,7 @@ const createPost = async (req, res) => {
       title,
       slug: generateSlug,
       content,
+      post_image: req.file ? req.file.filename : null,
       isPublished,
       publishedAt,
       status,
@@ -230,4 +255,5 @@ export {
   updatePost,
   deletePost,
   getAllPostForDashboard,
+  uploadMiddleware,
 };
